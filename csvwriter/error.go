@@ -3,16 +3,20 @@ package csvwriter
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/tigorlazuardi/tokopedia-web-scrap/pkg"
 )
 
 type Error struct {
-	message string
-	cause   error
-	origin  string
+	message  string
+	cause    error
+	origin   string
+	location pkg.CallerTrace
 }
 
 func wrapError(cause error, msgFormat string, args ...interface{}) Error {
-	return Error{fmt.Sprintf(msgFormat, args...), cause, "csvwriter"}
+	trace := pkg.GetCallerInfo(2)
+	return Error{fmt.Sprintf(msgFormat, args...), cause, "csvwriter", trace}
 }
 
 func (e Error) Error() string {
@@ -28,8 +32,9 @@ func (e Error) Unwrap() error {
 
 func (e Error) MarhsalJSON() ([]byte, error) {
 	m := map[string]interface{}{
-		"message": e.message,
-		"origin":  e.origin,
+		"message":  e.message,
+		"origin":   e.origin,
+		"location": e.location,
 	}
 	if e.cause != nil {
 		val, _ := json.Marshal(e.cause)
