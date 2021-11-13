@@ -23,6 +23,7 @@ type TokopediaProductScraper struct {
 func (ts TokopediaProductScraper) Scrap(url string) (data ScrapeDataList, err error) {
 	c := colly.NewCollector()
 	c.SetRequestTimeout(ts.timeout)
+	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0"
 	c.OnHTML(ts.productListQuerySelector, ts.productListScraper)
 	c.OnError(ts.onError)
 
