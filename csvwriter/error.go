@@ -12,7 +12,7 @@ type Error struct {
 }
 
 func wrapError(cause error, msgFormat string, args ...interface{}) Error {
-	return Error{fmt.Sprintf(msgFormat, args), cause, "csvwriter"}
+	return Error{fmt.Sprintf(msgFormat, args...), cause, "csvwriter"}
 }
 
 func (e Error) Error() string {
