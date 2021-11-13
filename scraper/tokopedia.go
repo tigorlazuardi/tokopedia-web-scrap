@@ -1,11 +1,13 @@
 package scraper
 
 import (
-	"strconv"
+	"context"
+	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/gocolly/colly/v2"
+	"github.com/PuerkitoBio/goquery"
 )
 
 type TokopediaProductScraper struct {
@@ -17,26 +19,33 @@ type TokopediaProductScraper struct {
 	collection map[string]*ScrapeData
 	err        error
 	mu         *sync.RWMutex
+	limit      int
 }
 
 // implements Scraper interface
-func (ts TokopediaProductScraper) Scrap(url string) (data ScrapeDataList, err error) {
-	c := colly.NewCollector()
-	c.SetRequestTimeout(ts.timeout)
-	c.OnHTML(ts.productListQuerySelector, ts.productListScraper)
-	c.OnError(ts.onError)
+func (ts TokopediaProductScraper) Scrap(ctx context.Context, url string) (data ScrapeDataList, err error) {
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
-	i := 1
-	for len(ts.collection) < 100 {
-		ts.mu.RLock()
-		if ts.err != nil {
-			ts.mu.RUnlock()
-			return data, ts.err
-		}
-		ts.mu.RUnlock()
-		url := url + "&page=" + strconv.Itoa(i)
-		c.Visit(url)
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
 	}
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("tokopedia returned status code of %d", res.StatusCode)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return
+	}
+	res.Body.Close()
+
+	doc.Find(`div[data-testid="lstCL2ProductList"]>div>a`).Children().Each(func(i int, s *goquery.Selection) {
+		fmt.Println(s.Text())
+	})
+
 	result := make(ScrapeDataList, len(ts.collection))
 	for _, v := range ts.collection {
 		result = append(result, *v)
@@ -44,24 +53,15 @@ func (ts TokopediaProductScraper) Scrap(url string) (data ScrapeDataList, err er
 	return result, ts.err
 }
 
-func (ts TokopediaProductScraper) productListScraper(element *colly.HTMLElement) {
-
-}
-
-func (ts TokopediaProductScraper) descriptionScraper(url string) colly.HTMLCallback {
-	return func(element *colly.HTMLElement) {
-
-	}
-}
-
-func (ts TokopediaProductScraper) onError(res *colly.Response, e error) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	ts.err = e
+func (ts TokopediaProductScraper) hasError() bool {
+	ts.mu.RLock()
+	err := ts.err
+	ts.mu.RUnlock()
+	return err != nil
 }
 
 // Create Tokopedia Product Scraper
-func NewTokopediaProductScraper(productListQuerySelector, descriptionQuerySelector, blackListPrefix string, timeout time.Duration) *TokopediaProductScraper {
+func NewTokopediaProductScraper(productListQuerySelector, descriptionQuerySelector, blackListPrefix string, timeout time.Duration, limit int) *TokopediaProductScraper {
 	return &TokopediaProductScraper{
 		productListQuerySelector: productListQuerySelector,
 		descriptionQuerySelector: descriptionQuerySelector,
@@ -69,5 +69,6 @@ func NewTokopediaProductScraper(productListQuerySelector, descriptionQuerySelect
 		timeout:                  timeout,
 		collection:               make(map[string]*ScrapeData),
 		mu:                       &sync.RWMutex{},
+		limit:                    limit,
 	}
 }

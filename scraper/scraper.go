@@ -1,10 +1,13 @@
 package scraper
 
-import "strconv"
+import (
+	"context"
+	"strconv"
+)
 
 type Scraper interface {
 	// Gets ScrapeData from url.
-	Scrap(url string) (data ScrapeDataList, err error)
+	Scrap(ctx context.Context, url string) (data ScrapeDataList, err error)
 }
 
 type ScrapeData struct {

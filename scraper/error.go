@@ -3,6 +3,7 @@ package scraper
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/tigorlazuardi/tokopedia-web-scrap/pkg"
@@ -30,19 +31,37 @@ type RequestInfo struct {
 }
 
 type ResponseInfo struct {
-	Status int         `json:"status"`
-	Body   interface{} `json:"body"`
-	Header http.Header `json:"header"`
+	Status             int           `json:"status"`
+	Body               interface{}   `json:"body"`
+	Header             http.Header   `json:"header"`
+	ConnectionDuration time.Duration `json:"connection_duration"`
 }
 
 func requestInfoFromCollyRequest(req *colly.Request) RequestInfo {
-	body, _ := ioutil.ReadAll(req.Body)
+	var body []byte
+	if req.Body != nil {
+		body, _ = ioutil.ReadAll(req.Body)
+	} else {
+		body = []byte(``)
+	}
 	return RequestInfo{
 		Method: req.Method,
 		Url:    req.URL.String(),
 		Body:   string(body),
 		Header: req.Headers.Clone(),
 	}
+}
+
+func responseInfoFromCollyResponse(res *colly.Response) ResponseInfo {
+	ri := ResponseInfo{
+		Status: res.StatusCode,
+		Body:   res.Body,
+		Header: res.Headers.Clone(),
+	}
+	if res.Trace != nil {
+		ri.ConnectionDuration = res.Trace.ConnectDuration
+	}
+	return ri
 }
 
 func newError(err error, req RequestInfo, res ResponseInfo) Error {
