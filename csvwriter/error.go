@@ -32,12 +32,11 @@ func (e Error) MarhsalJSON() ([]byte, error) {
 		"origin":  e.origin,
 	}
 	if e.cause != nil {
-		if val, err := json.Marshal(e.cause); err == nil {
-			if string(val) == "{}" {
-				m["error"] = e.cause.Error()
-			} else {
-				m["error"] = e.cause
-			}
+		val, _ := json.Marshal(e.cause)
+		if string(val) == "{}" {
+			m["error"] = e.cause.Error()
+		} else {
+			m["error"] = e.cause
 		}
 	}
 	return json.Marshal(m)
