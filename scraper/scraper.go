@@ -4,7 +4,6 @@ import "strconv"
 
 type Scraper interface {
 	// Gets ScrapeData from url.
-	// Visitor should not visit any url aside from this given url and next pagination.
 	Scrap(url string) (data ScrapeDataList, err error)
 }
 
