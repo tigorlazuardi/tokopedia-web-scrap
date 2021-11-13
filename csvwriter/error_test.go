@@ -12,5 +12,5 @@ func Test_wrapError(t *testing.T) {
 	errW := wrapError(err, "abcd%s", "efgh")
 
 	assert.Equal(t, err, errW.cause)
-	assert.Equal(t, "csvwriter.Test_wrapError", errW.stack.Name)
+	assert.Equal(t, "csvwriter.Test_wrapError", errW.location.Name)
 }
