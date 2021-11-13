@@ -1,3 +1,3 @@
-module github.com/tigorlazuardi/web-scrap-tokopedia
+module github.com/tigorlazuardi/tokopedia-web-scrap
 
 go 1.17

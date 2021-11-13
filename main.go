@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/tigorlazuardi/web-scrap-tokopedia/cmd"
+	"github.com/tigorlazuardi/tokopedia-web-scrap/cmd"
 )
 
 func main() {
